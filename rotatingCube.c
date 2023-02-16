@@ -15,7 +15,7 @@
 #define SAMPLE_RATE		(.6)
 
 #define ROTATION_X		(M_PI/180)
-#define ROTATION_Y		(M_PI/180)
+#define ROTATION_Y		0//(M_PI/180)
 #define ROTATION_Z		(M_PI/180)
 
 
@@ -25,6 +25,9 @@ typedef struct
 	double dY;
 	double dZ;
 } Coordinate;
+
+
+char screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 
 
 void computeRotation(Coordinate* psPoint, double dThetaX, double dThetaY, double dThetaZ)
@@ -47,13 +50,32 @@ void computeRotation(Coordinate* psPoint, double dThetaX, double dThetaY, double
 }
 
 
-int main(void)
+void rotateSurface()
 {
 	Coordinate sPoint;
 	float fIncrementX, fIncrementY;
+
+	// rotate every point in the surface
+	for (fIncrementX = 0; fIncrementX < CUBE_WIDTH; fIncrementX += SAMPLE_RATE)
+	{
+		for (fIncrementY = 0; fIncrementY < CUBE_WIDTH; fIncrementY += SAMPLE_RATE)
+		{
+			sPoint.dX = fIncrementX;
+			sPoint.dY = 0;
+			sPoint.dZ = fIncrementY;
+
+			computeRotation(&sPoint, dAngleX, dAngleY, dAngleZ);
+
+			screenBuffer[((int)sPoint.dZ + VERTICAL_PADDING)*SCREEN_WIDTH + (int)sPoint.dX + HORIZONTAL_PADDING] = '#';
+		}
+	}
+}
+
+
+int main(void)
+{
 	double dAngleX = 0, dAngleY = 0, dAngleZ = 0;
-	char screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
-	int iCharacterCpt, iCharIdx;
+	int iCharacterCpt;
 
 	for (;;)
 	{
@@ -63,29 +85,14 @@ int main(void)
 		// reset buffer
 		memset(screenBuffer, '.', SCREEN_WIDTH*SCREEN_HEIGHT);
 
-		// rotate every point in the surface
-		for (fIncrementX = 0; fIncrementX < CUBE_WIDTH; fIncrementX += SAMPLE_RATE)
-		{
-			for (fIncrementY = 0; fIncrementY < CUBE_WIDTH; fIncrementY += SAMPLE_RATE)
-			{
-				sPoint.dX = fIncrementX;
-				sPoint.dY = 0;
-				sPoint.dZ = fIncrementY;
-
-				computeRotation(&sPoint, dAngleX, dAngleY, dAngleZ);
-
-//				iCharIdx = ((int)sPoint.dZ + VERTICAL_PADDING)*SCREEN_WIDTH + (int)sPoint.dX + HORIZONTAL_PADDING;
-//				printf("x = %f, z = %f, idx = %d\n", sPoint.dX, sPoint.dZ, iCharIdx);
-
-				screenBuffer[((int)sPoint.dZ + VERTICAL_PADDING)*SCREEN_WIDTH + (int)sPoint.dX + HORIZONTAL_PADDING] = '#';
-			}
-		}
-
 		// draw cube
 		for (iCharacterCpt = 0; iCharacterCpt < SCREEN_WIDTH*SCREEN_HEIGHT; iCharacterCpt++)
 		{
 			putchar(!(iCharacterCpt%SCREEN_WIDTH) ? '\n' : screenBuffer[iCharacterCpt]);
 		}
+
+		// Rotate all 6 surfaces of the cube
+		rotateSurface();
 
 		// update rotation angles
 		dAngleX += ROTATION_X;
@@ -102,7 +109,7 @@ int main(void)
 			dAngleZ = 0;
 
 		usleep(10000);
-}
+	}
 
 	return 0;
 }
