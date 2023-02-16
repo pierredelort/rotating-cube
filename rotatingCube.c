@@ -74,9 +74,6 @@ int main(void)
 
 				computeRotation(&sPoint, dAngleX, dAngleY, dAngleZ);
 
-//				iCharIdx = ((int)sPoint.dZ + VERTICAL_PADDING)*SCREEN_WIDTH + (int)sPoint.dX + HORIZONTAL_PADDING;
-//				printf("x = %f, z = %f, idx = %d\n", sPoint.dX, sPoint.dZ, iCharIdx);
-
 				screenBuffer[((int)sPoint.dZ + VERTICAL_PADDING)*SCREEN_WIDTH + (int)sPoint.dX + HORIZONTAL_PADDING] = '#';
 			}
 		}
@@ -102,7 +99,7 @@ int main(void)
 			dAngleZ = 0;
 
 		usleep(10000);
-}
+	}
 
 	return 0;
 }
