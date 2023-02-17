@@ -5,17 +5,17 @@
 #include <unistd.h>
 
 
-#define SCREEN_WIDTH		70
-#define SCREEN_HEIGHT		50
+#define SCREEN_WIDTH		60
+#define SCREEN_HEIGHT		40
 
 #define HORIZONTAL_PADDING	25
-#define VERTICAL_PADDING	10
+#define VERTICAL_PADDING	20
 
 #define CUBE_WIDTH 		20
 #define SAMPLE_RATE		(.6)
 
 #define ROTATION_X		(M_PI/180)
-#define ROTATION_Y		0//(M_PI/180)
+#define ROTATION_Y		(M_PI/180)
 #define ROTATION_Z		(M_PI/180)
 
 
@@ -27,7 +27,9 @@ typedef struct
 } Coordinate;
 
 
+double dAngleX = 0, dAngleY = 0, dAngleZ = 0;
 char screenBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
+double dYBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 
 
 void computeRotation(Coordinate* psPoint, double dThetaX, double dThetaY, double dThetaZ)
@@ -50,23 +52,36 @@ void computeRotation(Coordinate* psPoint, double dThetaX, double dThetaY, double
 }
 
 
-void rotateSurface()
+void rotateSurface(int iMinSurfaceX, int iMaxSurfaceX,
+		int iMinSurfaceY, int iMaxSurfaceY,
+		int iMinSurfaceZ, int iMaxSurfaceZ,
+		char surfaceCharacter)
 {
 	Coordinate sPoint;
-	float fIncrementX, fIncrementY;
+	float fIncrementX, fIncrementY, fIncrementZ;
+	int iScreenBufferIdx = 0;
 
 	// rotate every point in the surface
-	for (fIncrementX = 0; fIncrementX < CUBE_WIDTH; fIncrementX += SAMPLE_RATE)
+	for (fIncrementX = iMinSurfaceX; fIncrementX <= iMaxSurfaceX; fIncrementX += SAMPLE_RATE)
 	{
-		for (fIncrementY = 0; fIncrementY < CUBE_WIDTH; fIncrementY += SAMPLE_RATE)
+		for (fIncrementY = iMinSurfaceY; fIncrementY <= iMaxSurfaceY; fIncrementY += SAMPLE_RATE)
 		{
-			sPoint.dX = fIncrementX;
-			sPoint.dY = 0;
-			sPoint.dZ = fIncrementY;
+			for (fIncrementZ = iMinSurfaceZ; fIncrementZ <= iMaxSurfaceZ; fIncrementZ += SAMPLE_RATE)
+			{
+				sPoint.dX = fIncrementX;
+				sPoint.dY = fIncrementY;
+				sPoint.dZ = fIncrementZ;
 
-			computeRotation(&sPoint, dAngleX, dAngleY, dAngleZ);
+				computeRotation(&sPoint, dAngleX, dAngleY, dAngleZ);
 
-			screenBuffer[((int)sPoint.dZ + VERTICAL_PADDING)*SCREEN_WIDTH + (int)sPoint.dX + HORIZONTAL_PADDING] = '#';
+				iScreenBufferIdx = ((int)sPoint.dZ + VERTICAL_PADDING)*SCREEN_WIDTH + (int)sPoint.dX + HORIZONTAL_PADDING;
+
+				//if (sPoint.dY > dYBuffer[iScreenBufferIdx])
+				{
+					dYBuffer[iScreenBufferIdx] = sPoint.dY;
+					screenBuffer[iScreenBufferIdx] = surfaceCharacter;
+				}
+			}
 		}
 	}
 }
@@ -74,8 +89,7 @@ void rotateSurface()
 
 int main(void)
 {
-	double dAngleX = 0, dAngleY = 0, dAngleZ = 0;
-	int iCharacterCpt;
+	int iCharacterCpt, iFaceCpt;
 
 	for (;;)
 	{
@@ -83,16 +97,22 @@ int main(void)
 		printf("\x1b[2J\x1b[H");
 
 		// reset buffer
-		memset(screenBuffer, '.', SCREEN_WIDTH*SCREEN_HEIGHT);
+		memset(screenBuffer, ' ', SCREEN_WIDTH*SCREEN_HEIGHT);
+		memset(dYBuffer, 0, SCREEN_WIDTH*SCREEN_HEIGHT);
+
+		// Rotate all 6 surfaces of the cube
+		rotateSurface(-CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, -CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, '#');
+		rotateSurface(-CUBE_WIDTH/2, -CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, '$');
+		rotateSurface(-CUBE_WIDTH/2, CUBE_WIDTH/2, CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, '+');
+		rotateSurface(CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, '%');
+		rotateSurface(-CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, CUBE_WIDTH/2, CUBE_WIDTH/2, '*');
+		rotateSurface(-CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, CUBE_WIDTH/2, -CUBE_WIDTH/2, -CUBE_WIDTH/2, '&');
 
 		// draw cube
 		for (iCharacterCpt = 0; iCharacterCpt < SCREEN_WIDTH*SCREEN_HEIGHT; iCharacterCpt++)
 		{
 			putchar(!(iCharacterCpt%SCREEN_WIDTH) ? '\n' : screenBuffer[iCharacterCpt]);
 		}
-
-		// Rotate all 6 surfaces of the cube
-		rotateSurface();
 
 		// update rotation angles
 		dAngleX += ROTATION_X;
@@ -108,8 +128,9 @@ int main(void)
 		if (dAngleZ >= 2*M_PI)
 			dAngleZ = 0;
 
-		usleep(10000);
+		usleep(15000);
 	}
 
 	return 0;
 }
+
